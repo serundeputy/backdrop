@@ -4254,6 +4254,13 @@ function backdrop_region_class($region) {
  *       else being the same, JavaScript added by a call to backdrop_add_js() that
  *       happened later in the page request gets added to the page after one for
  *       which backdrop_add_js() happened earlier in the page request.
+ *   - requires_jquery: Set this to FALSE if the JavaScript you are adding does
+ *     not have a dependency on jQuery. Defaults to TRUE, except for JavaScript
+ *     settings where it defaults to FALSE. This is used on sites that have the
+ *     'javascript_always_use_jquery' variable set to FALSE; on those sites, if
+ *     all the JavaScript added to the page by backdrop_add_js() does not have a
+ *     dependency on jQuery, then for improved front-end performance Backdrop
+ *     will not add jQuery and related libraries and settings to the page.
  *   - defer: If set to TRUE, the defer attribute is set on the <script>
  *     tag. Defaults to FALSE.
  *   - cache: If set to FALSE, the JavaScript file is loaded anew on every page
@@ -4274,6 +4281,13 @@ function backdrop_region_class($region) {
  */
 function backdrop_add_js($data = NULL, $options = NULL) {
   $javascript = &backdrop_static(__FUNCTION__, array());
+  $jquery_added = &backdrop_static(__FUNCTION__ . ':jquery_added', FALSE);
+  // If the $javascript variable has been reset with backdrop_static_reset(),
+  // jQuery and related files will have been removed from the list, so set the
+  // variable back to FALSE to indicate they have not yet been added.
+  if (empty($javascript)) {
+    $jquery_added = FALSE;
+  }
 
   // Construct the options, taking the defaults into consideration.
   if (isset($options)) {
@@ -4283,6 +4297,9 @@ function backdrop_add_js($data = NULL, $options = NULL) {
   }
   else {
     $options = array();
+  }
+  if (isset($options['type']) && $options['type'] == 'setting') {
+    $options += array('requires_jquery' => FALSE);
   }
   $options += backdrop_js_defaults($data);
 
@@ -4297,15 +4314,19 @@ function backdrop_add_js($data = NULL, $options = NULL) {
   $options['every_page_weight'] = $options['every_page'] ? -1 : 1;
 
   if (isset($data)) {
-    // Add jquery.js and backdrop.js, as well as the basePath setting, the
-    // first time a JavaScript file is added.
-    if (empty($javascript)) {
+    // Add jquery.js, backdrop.js, and related files and settings if they have
+    // not been added yet. However, if the 'javascript_always_use_jquery'
+    // variable is set to FALSE (indicating that the site does not want jQuery
+    // automatically added on all pages) then only add it if a file or setting
+    // that requires jQuery is being added also.
+    if (!$jquery_added && (config_get('system.core', 'javascript_always_use_jquery') || $options['requires_jquery'])) {
+      $jquery_added = TRUE;
       // url() generates the prefix using hook_url_outbound_alter(). Instead of
       // running the hook_url_outbound_alter() again here, extract the prefix
       // from url().
       $prefix = '';
       url('', array('prefix' => &$prefix));
-      $javascript = array(
+      $default_javascript = array(
         'settings' => array(
           'data' => array(
             array('basePath' => base_path()),
@@ -4325,6 +4346,7 @@ function backdrop_add_js($data = NULL, $options = NULL) {
           'group' => JS_LIBRARY,
           'every_page' => TRUE,
           'weight' => -1,
+          'requires_jquery' => TRUE,
           'preprocess' => TRUE,
           'cache' => TRUE,
           'defer' => FALSE,
@@ -4336,7 +4358,7 @@ function backdrop_add_js($data = NULL, $options = NULL) {
       if (!empty($GLOBALS['settings']['backdrop_drupal_compatibility'])) {
         $javascript['settings']['data'][] = array('drupalCompatibility' => TRUE);
       }
-
+      $javascript = backdrop_array_merge_deep($javascript, $default_javascript);
       // Register all required libraries.
       backdrop_add_library('system', 'jquery', TRUE);
       backdrop_add_library('system', 'jquery.once', TRUE);
@@ -4378,6 +4400,7 @@ function backdrop_js_defaults($data = NULL) {
     'group' => JS_DEFAULT,
     'every_page' => FALSE,
     'weight' => 0,
+    'requires_jquery' => TRUE,
     'scope' => 'header',
     'cache' => TRUE,
     'defer' => FALSE,
@@ -4425,7 +4448,11 @@ function backdrop_get_js($scope = 'header', $javascript = NULL, $skip_alter = FA
   if (!isset($javascript)) {
     $javascript = backdrop_add_js();
   }
-  if (empty($javascript)) {
+  // If no JavaScript items have been added, or if the only JavaScript items
+  // that have been added are JavaScript settings (which don't do anything
+  // without any JavaScript code to use them), then no JavaScript code should
+  // be added to the page.
+  if (empty($javascript) || (isset($javascript['settings']) && count($javascript) == 1)) {
     return '';
   }
 
