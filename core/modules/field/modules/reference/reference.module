@@ -5,6 +5,22 @@
  * Defines a field type for referencing other entites.
  */
 
+
+/**
+ * Implements hook_menu().
+ */
+function node_reference_menu() {
+  $items['field/reference/autocomplete/%/%/%'] = array(
+    'page callback' => 'reference_autocomplete',
+    'page arguments' => array(3, 4, 5),
+    'access callback' => 'reference_autocomplete_access',
+    'access arguments' => array(3, 4, 5),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+
 /**
  * Implements hook_field_info().
  */
@@ -40,18 +56,6 @@ function reference_field_settings_form($field, $instance, $has_data) {
     '#default_value' => isset($settings['entity_type']) ? $settings['entity_type'] : '',
     );
 
-    $form['bundle'] = array(
-    '#type' => 'textfield',
-    // TODO: switch to a multiselect select field
-    //'#type' => 'select',
-    '#title' => t('Bundle'),
-    // TODO: Get the options from hook_entity_info
-    // '#options' => array(),
-    '#description' => t('The machine name of the bundle.'),
-    // TODO: COME UP WITH A VALIDATE FUNCTION 
-    // '#element_validate' => array('form_validate_number'),
-    '#default_value' => isset($settings['bundle']) ? $settings['bundle'] : '',
-    );
   return $form;
 }
 
@@ -60,7 +64,14 @@ function reference_field_settings_form($field, $instance, $has_data) {
  */
 function reference_field_instance_settings_form($field, $instance) {
   $settings = $instance['settings'];
-
+  $form['bundles'] = array(
+  '#type' => 'checkboxes',
+  '#title' => t('Limit to types'),
+  '#options' => _reference_entity_bundle_options($field['settings']['entity_type']),
+  '#multiple' => TRUE,
+  '#description' => t('Leave unchecked to allow all types to be referenced.'),
+  '#default_value' => isset($settings['bundles']) ? $settings['bundles'] : array(),
+  );
   $form['status'] = array(
     '#type' => 'checkbox',
     '#title' => t('Limit to published content'),
@@ -86,15 +97,11 @@ function reference_field_widget_info() {
  */
 function reference_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   $element += array(
-    '#type' => 'number',
+    '#type' => 'textfield',
     '#default_value' => isset($items[$delta]['target_id']) ? $items[$delta]['target_id'] : '',
   );
   return array('target_id' => $element);
 }
-
-
-
-
 
 /**
  * Implements hook_field_is_empty().
@@ -102,4 +109,16 @@ function reference_field_widget_form(&$form, &$form_state, $field, $instance, $l
 function reference_field_is_empty($item, $field) {
   // TODO: Write a function to see if the field is empty
    // return TRUE;
+}
+
+/**
+ * Helper function to get the bundle info for an entity type and turn it into an array for select options
+ */
+function _reference_entity_bundle_options($entity_type) {
+  $options = array();
+  $bundles = field_info_bundles($entity_type);
+  foreach ($bundles as $key => $info) {
+    $options[$key] = $info['label'];
+  }
+  return $options;
 }
