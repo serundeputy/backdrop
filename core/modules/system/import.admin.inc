@@ -36,14 +36,12 @@ function system_import_settings($form, &$form_state) {
     '#value' => t('Import Content'),
     '#submit' => array(),
   );
-  // dpm($xml);
-  // dpm($xml->channel, 'channel');
-  //print_r($xml->channel->item);
+
   $xml = simplexml_load_file('/Users/geoff/bups/wp-export/wpexport.wordpress.2017-05-22.xml');
 
   //dpm($content);
-  //dpm($xml->channel);
-  foreach ($xml->channel as $item) {
+  //dpm($xml->channel->item);
+  foreach ($xml->channel->item as $item) {
     dpm($item->title);
   }
 
