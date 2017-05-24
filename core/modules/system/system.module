@@ -912,14 +912,35 @@ function system_menu() {
     'file' => 'system.admin.inc',
     'weight' => 20,
   );
-  $items['admin/config/system/import'] = array(
+
+  // Content imports and exports.
+  $items['admin/config/system/content'] = array(
+    'title' => 'Content',
+    'description' => 'Import content from a Backdrop or Wordpress site.',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('system_import_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'import.admin.inc',
+  );
+  $items['admin/config/system/content/import'] = array(
     'title' => 'Import Content',
     'description' => 'Import content from a Backdrop or Wordpress site.',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('system_import_settings'),
     'access arguments' => array('administer site configuration'),
     'file' => 'import.admin.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => 20,
+  );
+  $items['admin/config/system/content/export'] = array(
+    'title' => 'Export Content',
+    'description' => 'Export content from a Backdrop site.',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('system_export_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'import.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 40,
   );
 
   // URL handling.
