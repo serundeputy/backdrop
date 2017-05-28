@@ -34,16 +34,38 @@ function system_import_settings($form, &$form_state) {
   $form['import']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Import Content'),
-    '#submit' => array(),
+    '#submit' => array('system_import_settings_submit'),
   );
 
-  $xml = simplexml_load_file('/Users/geoff/bups/wp-export/wpexport.wordpress.2017-05-22.xml');
-
-  //dpm($content);
-  //dpm($xml->channel->item);
-  foreach ($xml->channel->item as $item) {
-    dpm($item->title);
-  }
-
   return $form;
+}
+
+/**
+ *
+ */
+function system_import_settings_submit(&$form, &$form_state) {
+  //dpm(file_directory_path()); return;
+  $filedir = config_get('system.core', 'file_public_path');
+  dpm($filedir);
+  $file = file_save_upload(
+    'import-file',
+    array('file_validate_extensions' => array('xml', 'json')),
+    $filedir . '/'
+  );
+  //dpm($file);
+  $realpath = backdrop_realpath($file->uri);
+  dpm($realpath, 'realpath');
+  $xml = xmlsimple_load_file($realpath);
+  dpm($xml);
+  // foreach ($xml->channel as $channel) {
+  //   dpm($channel);
+  // }
+  // $xml = simplexml_load_file('/Users/geoff/bups/wp-export/wpexport.wordpress.2017-05-22.xml');
+  // //$xml = backdrop_xml_parser_create($xml);
+  // //dpm($xml);
+  // var_dump($xml->channel[0]->title);
+  // foreach ($xml->channel as $key => $channel) {
+  //   //dpm($channel[$key]->title);
+  //   var_dump($channel->title);
+  // }
 }
