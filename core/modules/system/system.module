@@ -942,7 +942,12 @@ function system_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 40,
   );
-
+  $items['admin/config/system/content/export-content-download'] = array(
+    'page callback' => 'content_download_full_export',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'export.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
   // URL handling.
   $items['admin/config/urls'] = array(
     'title' => 'URL handling',

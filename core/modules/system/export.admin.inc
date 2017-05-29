@@ -43,9 +43,9 @@ function system_export_settings($form, &$form_state) {
 }
 
 /**
- * Submit handler for system_export_settings().
+ * Submit handler for config_export_full_form().
  */
-function system_export_settings_submit($form, &$form_state) {
+function system_export_settings_submit(array $form, array &$form_state) {
   $query = db_select('node', 'n')
     ->fields('n', array('nid'));
   $or = db_or();
@@ -64,7 +64,20 @@ function system_export_settings_submit($form, &$form_state) {
   }
   $nodes = node_load_multiple($nids);
   $content = json_encode($nodes);
-  var_dump($content);
 
-  backdrop_set_message('Export successful!');
+  file_unmanaged_save_data($content, 'public://content-export.json', FILE_EXISTS_RENAME);
+
+  $form_state['redirect'] = 'admin/config/system/content/export-content-download';
+}
+
+/**
+ * Downloads a tarball of the site configuration.
+ */
+function content_download_full_export() {
+  $headers = array(
+    'Content-Disposition' => 'attachment; filename=content-export.json',
+    'Content-type' => 'application/json',
+  );
+  file_transfer('public://content-export.json', $headers);
+  file_unmanaged_delete('public://content-export.json');
 }
