@@ -14,15 +14,16 @@ function system_import_settings($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Import Content'),
   );
-  $form['import']['type-of-import'] = array(
-    '#type' => 'select',
-    '#title' => 'Source of import data:',
-    '#description' => 'Select the source of the import i.e. the data came from a Backdrop site.',
-    '#options' => array(
-      'backdrop' => 'Backdrop CMS',
-      'wordrpress' => 'WordPress',
-    ),
-  );
+  // TODO: Figure out if we can autodetect the type of impoort.
+  // $form['import']['type-of-import'] = array(
+  //   '#type' => 'select',
+  //   '#title' => 'Source of import data:',
+  //   '#description' => 'Select the source of the import i.e. the data came from a Backdrop site.',
+  //   '#options' => array(
+  //     'backdrop' => 'Backdrop CMS',
+  //     'wordrpress' => 'WordPress',
+  //   ),
+  // );
   $form['import']['import-file'] = array(
     '#type' => 'file',
     '#title' => 'Upload an XML or JSON file:',
@@ -45,10 +46,8 @@ function system_import_settings($form, &$form_state) {
  */
 function system_import_settings_validate($form, &$form_state) {
   $file = file_save_upload('import-file', array(
-    // // Validates file is really an image.
-    // 'file_validate_is_image' => array(),f
     // Validate extensions.
-    'file_validate_extensions' => array('xml', 'json'),
+    'file_validate_extensions' => array('json', 'xml'),
   ));
 
   // If the file passed validation:
@@ -80,34 +79,28 @@ function system_import_settings_submit(&$form, &$form_state) {
   $file->status = FILE_STATUS_PERMANENT;
   // Save file status.
   file_save($file);
-  dpm($file);
 
-  $real_path = backdrop_realpath($file->path['source']);
-  dpm($real_path, 'real path');
+  $realpath = backdrop_realpath($file->path['source']);
 
-  // Get the XML Data.
-  $xml_data = simplexml_load_file($real_path);
-  //dpm($xml_data, 'data');
-  print_r($xml_data);
+  // TODO: figure out if the file is an XML WordPress export or a JSON Backdrop
+  // export.
+  $content = file_get_contents($realpath);
+  $content = backdrop_json_decode($content);
 
-  foreach ($xml_data as $channel) {
-    //dpm($channel->title, 'title');
-    print_r($channel);
+  // Save as new content nodes.
+  foreach ($content as $c) {
+    if(isset($c['nid'])) {
+      unset($c['nid']);
+    }
+    if (isset($c['vid'])) {
+      unset($c['vid']);
+    }
+
+    $node = new Node($c);
+    $node->save();
   }
 
- //  try {
- //   $xml = new SimpleXMLElement($xml_data);
- // }
- // catch (Exception $e) {
- //   // SimpleXMLElement::__construct produces an E_WARNING error message for
- //   // each error found in the XML data and throws an exception if errors
- //   // were detected. Catch any exception and return failure (NULL).
- //   return;
- // }
-
- dpm($xml, 'xml');
-
-  // Set a response to the user.
+  // Gie a message to the user.
   backdrop_set_message(
     t(
       'The import has been saved, filename: @filename. Check the /admin/content

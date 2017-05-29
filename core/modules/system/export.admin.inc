@@ -65,7 +65,7 @@ function system_export_settings_submit(array $form, array &$form_state) {
   $nodes = node_load_multiple($nids);
   $content = json_encode($nodes);
 
-  file_unmanaged_save_data($content, 'public://content-export.json', FILE_EXISTS_RENAME);
+  file_unmanaged_save_data($content, 'public://content-export.json', FILE_EXISTS_REPLACE);
 
   $form_state['redirect'] = 'admin/config/system/content/export-content-download';
 }
