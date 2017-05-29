@@ -938,7 +938,7 @@ function system_menu() {
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('system_export_settings'),
     'access arguments' => array('administer site configuration'),
-    'file' => 'import.admin.inc',
+    'file' => 'export.admin.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 40,
   );

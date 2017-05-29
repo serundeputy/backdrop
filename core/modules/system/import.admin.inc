@@ -31,6 +31,9 @@ function system_import_settings($form, &$form_state) {
   $form['import']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Import Content'),
+    '#attributes' => array(
+      'class' => array('button-primary'),
+    ),
     '#submit' => array('system_import_settings_submit'),
   );
 
